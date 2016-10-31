@@ -1,0 +1,12 @@
+BigLambda
+Copyright 2014-2015 Amazon.com, Inc. or its affiliates. All Rights Reserved. 
+
+**********************
+THIRD PARTY COMPONENTS
+**********************
+This software includes third party software subject to the following copyrights:
+
+src/nodejs/s3utils.js : The MIT License
+
+The licenses for these third party components are included in LICENSE.txt
+

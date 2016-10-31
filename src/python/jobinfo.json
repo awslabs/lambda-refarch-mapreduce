@@ -1,0 +1,7 @@
+{
+    "jobBucket": "smallya-useast-1", 
+    "mapCount": 29, 
+    "reducerFunction": "BL-reducer-bl-release", 
+    "reducerHandler": "reducer.lambda_handler", 
+    "jobId": "bl-release"
+}

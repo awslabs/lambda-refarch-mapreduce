@@ -1,0 +1,6 @@
+# Project TODOs
+
+# Delete reducer and coordinator lambda job on completion
+# Option to update code, if function present
+# Clean up S3 jobstate and files
+# Cloudwatch log group cleanup

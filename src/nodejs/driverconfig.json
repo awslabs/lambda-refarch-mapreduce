@@ -1,0 +1,23 @@
+{
+  "sourceBucket": "big-data-benchmark",
+  "jobBucket": "smallya-useast-1",
+  "prefix": "pavlo/text/1node/uservisits/",
+  "region": "us-east-1",
+  "lambdaMemory": 1536,
+  "concurrentLambdas": 100,
+  "mapper": {
+        "name": "mapper.js",
+        "handler": "mapper.handler",
+        "zip": "mapper.zip"
+    },
+  "reducer":{
+        "name": "reducer.js",
+        "handler": "reducer.handler",
+        "zip": "reducer.zip"
+    },
+  "reducerCoordinator":{
+        "name": "reducerCoordinator.js",
+        "handler": "reducerCoordinator.handler",
+        "zip": "reducerCor.zip"
+    }
+}
