@@ -1,16 +1,25 @@
 # Serverless Reference Architecture: MapReduce
 
-The serverless MapReduce reference architecture demonstrates how to use AWS Lambda in conjunction with Amazon S3 to build a MapReduce framework to process data stored in S3. By leveraging this framework you can build a cost-effective pipeline to run ad hoc MapReduce jobs. The price-per-query model and ease of use make it very suitable for data scientists and developers alike. 
+This serverless MapReduce reference architecture demonstrates how to use [AWS Lambda](https://aws.amazon.com/lambda) in conjunction with [Amazon S3](https://aws.amazon.com/s3) to build a MapReduce framework that can process data stored in S3. 
+
+By leveraging this framework, you can build a cost-effective pipeline to run ad hoc MapReduce jobs. The price-per-query model and ease of use make it very suitable for data scientists and developers alike. 
+
+## Features
+
+* Close to "zero" setup time
+* Pay per execution model for every job
+* Cheaper than other data processing solutions
+* Enables data processing within a VPC
 
 ## Architecture
 
-![alt text] (https://s3.amazonaws.com/smallya-test/bl-git.png "BigLambda Architecture")
+![alt text] (https://s3.amazonaws.com/smallya-test/bl-git.png "Serverless MapReduce architecture")
 
 ## Running the Example
-To run the full example, you must have your AWS CLI setup with creditials that have access to create
-and invole AWS Lambda and access to list, read, write to a S3 bucket.
+To run the full example, you must have the AWS CLI set up. Your credentials must have access to create
+and invoke Lambda and access to list, read, and write to a S3 bucket.
 
-### IAM Policies 
+### IAM policies 
 
 * Lambda execution role with 
     * [S3 read/write access](http://docs.aws.amazon.com/lambda/latest/dg/with-s3-example-create-iam-role.html)
@@ -18,13 +27,13 @@ and invole AWS Lambda and access to list, read, write to a S3 bucket.
  
 Check policy.json for a sample that you can use or extend.
 
-* To execute the driver locally, make sure you configure your AWS profile with access to: 
+* To execute the driver locally, make sure that you configure your AWS profile with access to: 
     * [S3](http://docs.aws.amazon.com/AmazonS3/latest/dev/example-policies-s3.html)
     * [Lambda](http://docs.aws.amazon.com/lambda/latest/dg/lambda-api-permissions-ref.html)
 
-### Setting up the Job
+### Setting up the job
 
-Edit the jobBucket field to a S3 bucket in your account that you wish to use for the example. Modify
+For the jobBucket field, enter an S3 bucket in your account that you wish to use for the example. Modify
 other fields as required if you end up renaming files.
 
 ```
@@ -52,11 +61,10 @@ other fields as required if you end up renaming files.
 }
 
 ```
-### Running the Job 
+### Running the job 
 
-* Make sure you have edited the configuration JSON (driverconfig.json) 
-* Update the mapper and reducer code as required, leave them unedited if your runnig the same
-  example 
+* Make sure that you have edited the configuration JSON file (driverconfig.json) 
+* Update the mapper and reducer code as required, leave them unedited if you're running the same example 
 * Run the driver:
  
 	$ python driver.py
@@ -78,30 +86,21 @@ smallya$ head –n 3 result
 25.77.91,14.262780186000002
 ```
 
-### Cleaning Up the Example Resources
+### Cleaning up the example resources
 To remove all resources created by this example, do the following:
 
-1. Delete all objects from the `jobBucket` created by the example job.
+1. Delete all objects from the S3 bucket listed in `jobBucket` created by the job.
 1. Delete the Cloudwatch log groups for each of the Lambda functions created by the job. 
 
-## Additional Information 
-
-### Features
-
-* Close to "zero" setup time
-* Pay per execution model for every job
-* Cheaper than other data processing solutions
-* Enables data processing within a VPC
-
-### Languages
+## Languages
 * Python 2.7 (active development)
 * Node.js
 
 The Python version is under active development and feature enhancement.
 
-### Benchmark
+## Benchmark
 
-To compare BigLambda with other data processing frameworks, we ran a subset of the Amplab benchmark. The table below has the execution time for each workload in seconds: 
+To compare this framework with other data processing frameworks, we ran a subset of the Amplab benchmark. The table below has the execution time for each workload in seconds: 
 
 Dataset
 
@@ -112,7 +111,7 @@ S3 Suffix   Scale Factor    Rankings (rows) Rankings (bytes)    UserVisits (rows
 
 Queries:
 
-* Scan query  (90M Rows, 6.36GB of data)
+* Scan query  (90 M Rows, 6.36 GB of data)
 * SELECT pageURL, pageRank FROM rankings WHERE pageRank > X   ( X= {1000, 100, 10} )
 
     * 1a) SELECT pageURL, pageRank FROM rankings WHERE pageRank > 1000   
@@ -123,7 +122,7 @@ Queries:
     * 2a) SELECT SUBSTR(sourceIP, 1, 8), SUM(adRevenue) FROM uservisits GROUP BY SUBSTR(sourceIP, 1, 8)
 
 
-NOTE: Only a subset of the queries could be run as AWS Lambda currently supports a maximum container size of 1536 MB. The benchmark is designed to increase the output size by an order of magnitude for the a,b,c iterations. Given that the output size doesn't fit in Lambda memory, we currently can't process to compute the final output. 
+NOTE: Only a subset of the queries could be run, as Lambda currently supports a maximum container size of 1536 MB. The benchmark is designed to increase the output size by an order of magnitude for the a,b,c iterations. Given that the output size doesn't fit in Lambda memory, we currently can't process to compute the final output. 
 
 ```
 |-----------------------|---------|---------|--------------|
@@ -156,4 +155,4 @@ Serverless MapReduce Cost:
 ```
 
 ## License
-This reference architecture sample is licensed under Amazon Software License
+This reference architecture sample is licensed under  the Amazon Software License.
