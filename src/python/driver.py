@@ -107,17 +107,17 @@ zipLambda(config["reducerCoordinator"]["name"], config["reducerCoordinator"]["zi
 # mapper
 l_mapper = lambdautils.LambdaManager(lambda_client, s3_client, region, config["mapper"]["zip"], job_id,
         mapper_lambda_name, config["mapper"]["handler"])
-l_mapper.create_lambda_function()
+l_mapper.update_code_or_create_on_noexist()
 
 # Reducer func
 l_reducer = lambdautils.LambdaManager(lambda_client, s3_client, region, config["reducer"]["zip"], job_id,
         reducer_lambda_name, config["reducer"]["handler"])
-l_reducer.create_lambda_function()
+l_reducer.update_code_or_create_on_noexist()
 
 # Coordinator
 l_rc = lambdautils.LambdaManager(lambda_client, s3_client, region, config["reducerCoordinator"]["zip"], job_id,
         rc_lambda_name, config["reducerCoordinator"]["handler"])
-l_rc.create_lambda_function()
+l_rc.update_code_or_create_on_noexist()
 
 # Add permission to the coordinator
 l_rc.add_lambda_permission(random.randint(1,1000), job_bucket)
@@ -133,7 +133,6 @@ data = json.dumps({
                 "startTime": time.time()
                 })
 write_to_s3(job_bucket, j_key, data, {})
-    
 
 ### Execute ###
 

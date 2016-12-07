@@ -12,6 +12,9 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License. 
 '''
+import boto3
+import botocore
+import os
 
 class LambdaManager(object):
     def __init__ (self, l, s3, region, codepath, job_id, fname, handler, lmem=1536):
@@ -22,7 +25,7 @@ class LambdaManager(object):
         self.job_id = job_id
         self.function_name = fname
         self.handler = handler
-        self.role = 'MY_ARN'
+        self.role = os.environ.get('serverless_mapreduce_role')
         self.memory = lmem 
         self.timeout = 300
         self.function_arn = None # set after creation
@@ -43,6 +46,31 @@ class LambdaManager(object):
                     )
         self.function_arn = response['FunctionArn']
         print response
+
+    def update_function(self):
+        '''
+        Update lambda function
+        '''
+        response = self.awslambda.update_function_code(
+                FunctionName = self.function_name, 
+                ZipFile=open(self.codefile, 'rb').read(),
+                Publish=True
+                )
+        updated_arn = response['FunctionArn']
+        # parse arn and remove the release number (:n) 
+        arn = ":".join(updated_arn.split(':')[:-1])
+        self.function_arn = arn 
+        print response
+
+    def update_code_or_create_on_noexist(self):
+        '''
+        Update if the function exists, else create function
+        '''
+        try:
+            self.create_lambda_function()
+        except botocore.exceptions.ClientError as e:
+            # parse (Function already exist) 
+            self.update_function()
 
     def add_lambda_permission(self, sId, bucket):
         resp = self.awslambda.add_permission(
@@ -77,13 +105,24 @@ class LambdaManager(object):
                 }
               }
             ],
-            'TopicConfigurations' : [],
-            'QueueConfigurations' : []
+            #'TopicConfigurations' : [],
+            #'QueueConfigurations' : []
           }
         )
 
     def delete_function(self):
         self.awslambda.delete_function(FunctionName=self.function_name)
+
+    @classmethod
+    def cleanup_logs(cls, func_name):
+        '''
+        Delete all Lambda log group and log streams for a given function
+
+        '''
+        log_client = boto3.client('logs')
+        #response = log_client.describe_log_streams(logGroupName='/aws/lambda/' + func_name)
+        response = log_client.delete_log_group(logGroupName='/aws/lambda/' + func_name)
+        return response
 
 def compute_batch_size(keys, lambda_memory, gzip=False):
     max_mem_for_data = 0.6 * lambda_memory * 1000 * 1000; 
