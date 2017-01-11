@@ -38,7 +38,7 @@ To run the example, you must have the AWS CLI set up. Your credentials must have
 
 2. Update the policy.json with your S3 bucket name
 
-  $ sed 's/s3:::MY-S3-BUCKET/s3:::biglambda-s3-bucket/' policy.json
+  $ sed -i 's/s3:::MY-S3-BUCKET/s3:::biglambda-s3-bucket/' policy.json
 
 3. Create the IAM role with respective policy
 
