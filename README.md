@@ -44,11 +44,15 @@ To run the example, you must have the AWS CLI set up. Your credentials must have
 
   $ python create-biglambda-role.py
 
-4. Make edits to driverconfig.json and verify
+4. Use the output ARN from the script. Set the serverless_mapreduce_role environment variable:
+
+  $ export serverless_mapreduce_role=arn:aws:iam::MY-ACCOUNT-ID:role/biglambda_role
+
+5. Make edits to driverconfig.json and verify
 
   $ cat driverconfig.json 
 
-5. Run the driver
+6. Run the driver
  
 	$ python driver.py
 

@@ -17,17 +17,21 @@ trust_role = {
 
 rn='biglambda_role'
 rp='biglambda_policy'
+
 try:
     response = client.create_role(RoleName=rn,AssumeRolePolicyDocument=json.dumps(trust_role))
-    print response
+    print response['Role']['Arn']
     print "Success: done creating role"
 except botocore.exceptions.ClientError as e:
     print "Error: {0}".format(e)
 
-with open('policy.json') as json_data:
-    response = client.put_role_policy(RoleName=rn,PolicyName=rp,
-        PolicyDocument=json.dumps(json.load(json_data))
-    )
-    print response
-    print "Success: done adding inline policy to role"
+try:
+    with open('policy.json') as json_data:
+        response = client.put_role_policy(RoleName=rn,PolicyName=rp,
+            PolicyDocument=json.dumps(json.load(json_data))
+        )
+        print "Success: done adding inline policy to role"
+except botocore.exceptions.ClientError as e:
+    print "Error: {0}".format(e)
+
 
