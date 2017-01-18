@@ -15,10 +15,6 @@ By leveraging this framework, you can build a cost-effective pipeline to run ad 
 
 ![alt text] (https://s3.amazonaws.com/smallya-test/bl-git.png "Serverless MapReduce architecture")
 
-## Running the Example
-To run the full example, you must have the AWS CLI set up. Your credentials must have access to create
-and invoke Lambda and access to list, read, and write to a S3 bucket.
-
 ### IAM policies 
 
 * Lambda execution role with 
@@ -31,17 +27,45 @@ Check policy.json for a sample that you can use or extend.
     * [S3](http://docs.aws.amazon.com/AmazonS3/latest/dev/example-policies-s3.html)
     * [Lambda](http://docs.aws.amazon.com/lambda/latest/dg/lambda-api-permissions-ref.html)
 
-### Setting up the job
+### Quickstart::Step by Step  ###
 
-For the jobBucket field, enter an S3 bucket in your account that you wish to use for the example. Modify
-other fields as required if you end up renaming files.
+To run the example, you must have the AWS CLI set up. Your credentials must have access to create and invoke Lambda and access to list, read, and write to a S3 bucket.
+
+1. Create your S3 bucket to store the intermediaries and result
+(remember to use your own bucket name due to S3 namespace)
+
+  $ aws s3 mb s3://biglambda-s3-bucket
+
+2. Update the policy.json with your S3 bucket name
+
+  $ sed -i 's/s3:::MY-S3-BUCKET/s3:::biglambda-s3-bucket/' policy.json
+
+3. Create the IAM role with respective policy
+
+  $ python create-biglambda-role.py
+
+4. Use the output ARN from the script. Set the serverless_mapreduce_role environment variable:
+
+  $ export serverless_mapreduce_role=arn:aws:iam::MY-ACCOUNT-ID:role/biglambda_role
+
+5. Make edits to driverconfig.json and verify
+
+  $ cat driverconfig.json 
+
+6. Run the driver
+ 
+	$ python driver.py
+
+### Modifying the Job (driverconfig.json)
+
+For the jobBucket field, enter an S3 bucket in your account that you wish to use for the example. Make changes to the other fields if you have different source data, or if you have renamed the files.
 
 ```
 
 {
         "bucket": "big-data-benchmark",
         "prefix": "pavlo/text/1node/uservisits/",
-        "jobBucket": "MY-JOB-BUCKET",
+        "jobBucket": "biglambda-s3-bucket",
         "concurrentLambdas": 100,
         "mapper": {
             "name": "mapper.py",
@@ -61,13 +85,6 @@ other fields as required if you end up renaming files.
 }
 
 ```
-### Running the job 
-
-* Make sure that you have edited the configuration JSON file (driverconfig.json) 
-* Update the mapper and reducer code as required, leave them unedited if you're running the same example 
-* Run the driver:
- 
-	$ python driver.py
 
 ### Outputs 
 
@@ -91,6 +108,9 @@ To remove all resources created by this example, do the following:
 
 1. Delete all objects from the S3 bucket listed in `jobBucket` created by the job.
 1. Delete the Cloudwatch log groups for each of the Lambda functions created by the job. 
+1. Delete the created IAM role
+
+    $ python delete-biglambda-role.py
 
 ## Languages
 * Python 2.7 (active development)
