@@ -47,7 +47,7 @@ exports.handler = function(event, context) {
                 totals[srcIp] += parseFloat(data[3]);
 
                 var et = process.hrtime(dataProcessingStartTime);
-                pt = (et[0] * 1e9 + et[1]);
+                pt += (et[0] * 1e9 + et[1]);
             })
             .on('error', function(err){
                 console.error('Error in lineSplitter: ' + err);
