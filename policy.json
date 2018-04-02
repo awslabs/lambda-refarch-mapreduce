@@ -64,6 +64,19 @@
                 "arn:aws:s3:::MY-S3-BUCKET/*"
             ]
         },
+
+        {
+            "Sid": "StmXrayAllow",
+            "Effect": "Allow",
+            "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords"
+            ],
+            "Resource": [
+                "*"
+            ]
+        },
+        
         {
             "Effect": "Allow",
             "Action": [
