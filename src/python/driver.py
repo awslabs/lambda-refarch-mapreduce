@@ -40,17 +40,13 @@ patch_all()
 logging.basicConfig(level='WARNING')
 logging.getLogger('aws_xray_sdk').setLevel(logging.ERROR)
 # collect all tracing samples 
-rules={"version": 1, "default": {"fixed_target": 1,"rate": 1}}
-xray_recorder.configure(sampling_rules=rules)
+SAMPLING_RULES = {"version": 1, "default": {"fixed_target": 1, "rate": 1}}
+xray_recorder.configure(sampling_rules=SAMPLING_RULES)
 
 xray_recorder.begin_segment('Map Reduce Driver')
 # create an S3 session
 s3 = boto3.resource('s3')
 s3_client = boto3.client('s3')
-
-# Setting longer timeout for reading lambda results and larger connections pool
-lambda_config=Config(read_timeout=120, max_pool_connections=50)
-lambda_client = boto3.client('lambda',config=lambda_config)
 
 JOB_INFO = 'jobinfo.json'
 
@@ -95,6 +91,11 @@ job_bucket = config["jobBucket"]
 region = config["region"]
 lambda_memory = config["lambdaMemory"]
 concurrent_lambdas = config["concurrentLambdas"]
+lambda_read_timeout = config["lambda_read_timeout"]
+
+# Setting longer timeout for reading lambda results and larger connections pool
+lambda_config = Config(read_timeout=lambda_read_timeout, max_pool_connections=50)
+lambda_client = boto3.client('lambda', config=lambda_config)
 
 # Fetch all the keys that match the prefix
 all_keys = []
@@ -161,7 +162,7 @@ data = json.dumps({
                 "totalS3Files": len(all_keys),
                 "startTime": time.time()
                 })
-xray_recorder.current_subsegment().put_metadata("Job data: ", data, "Write job data to S3");
+xray_recorder.current_subsegment().put_metadata("Job data: ", data, "Write job data to S3")
 write_to_s3(job_bucket, j_key, data, {})
 xray_recorder.end_subsegment() #Write job data to S3
 
@@ -176,11 +177,10 @@ def invoke_lambda(batches, m_id):
     '''
     lambda invoke function
     '''
-    # TODO: Increase timeout
 
     #batch = [k['Key'] for k in batches[m_id-1]]
     batch = [k.key for k in batches[m_id-1]]
-    xray_recorder.current_segment().put_annotation("batch_for_mapper_"+str(m_id), str(batch));
+    xray_recorder.current_segment().put_annotation("batch_for_mapper_"+str(m_id), str(batch))
     #print "invoking", m_id, len(batch)
     resp = lambda_client.invoke( 
             FunctionName = mapper_lambda_name,
@@ -209,7 +209,7 @@ while mappers_executed < n_mappers:
     nm = min(concurrent_lambdas, n_mappers)
     results = pool.map(invoke_lambda_partial, Ids[mappers_executed: mappers_executed + nm])
     mappers_executed += nm
-    xray_recorder.current_subsegment().put_metadata("Mapper lambdas executed: ", mappers_executed, "Invoke mappers");
+    xray_recorder.current_subsegment().put_metadata("Mapper lambdas executed: ", mappers_executed, "Invoke mappers")
 
 pool.close()
 pool.join()
