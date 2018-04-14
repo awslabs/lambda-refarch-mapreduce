@@ -20,12 +20,14 @@ By leveraging this framework, you can build a cost-effective pipeline to run ad 
 * Lambda execution role with 
     * [S3 read/write access](http://docs.aws.amazon.com/lambda/latest/dg/with-s3-example-create-iam-role.html)
     * Cloudwatch log access (logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents)
+    * X-Ray write access (xray:PutTraceSegments, xray:PutTelemetryRecords)
  
 Check policy.json for a sample that you can use or extend.
 
 * To execute the driver locally, make sure that you configure your AWS profile with access to: 
     * [S3](http://docs.aws.amazon.com/AmazonS3/latest/dev/example-policies-s3.html)
     * [Lambda](http://docs.aws.amazon.com/lambda/latest/dg/lambda-api-permissions-ref.html)
+    * [X-Ray](https://docs.aws.amazon.com/xray/latest/devguide/xray-permissions.html)
 
 ### Quickstart::Step by Step  ###
 
@@ -52,7 +54,9 @@ To run the example, you must have the AWS CLI set up. Your credentials must have
 
   $ cat driverconfig.json 
 
-6. Run the driver
+6. [Run AWS X-Ray Daemon locally](https://docs.aws.amazon.com/xray/latest/devguide/xray-daemon-local.html), otherwise you will not be able to see traces from the local driver in AWS X-Ray console. However, traces from Reducer Coordinator Lambda functions will be present.
+
+7. Run the driver
  
 	$ python driver.py
 

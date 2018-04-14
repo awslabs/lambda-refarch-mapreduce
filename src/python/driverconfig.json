@@ -5,6 +5,7 @@
       "region": "us-east-1",
       "lambdaMemory": 1536,
       "concurrentLambdas": 100,
+      "lambda_read_timeout": 300,
       "mapper": {
             "name": "mapper.py",
             "handler": "mapper.lambda_handler",

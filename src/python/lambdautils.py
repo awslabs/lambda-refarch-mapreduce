@@ -30,6 +30,8 @@ class LambdaManager(object):
         self.timeout = 300
         self.function_arn = None # set after creation
 
+    # TracingConfig parameter switches X-Ray tracing on/off.
+    # Change value to 'Mode':'PassThrough' to switch it off
     def create_lambda_function(self):
         runtime = 'python2.7';
         response = self.awslambda.create_function(
@@ -42,7 +44,8 @@ class LambdaManager(object):
                       Runtime = runtime,
                       Description = self.function_name,
                       MemorySize = self.memory,
-                      Timeout =  self.timeout
+                      Timeout =  self.timeout,
+                      TracingConfig={'Mode':'Active'}
                     )
         self.function_arn = response['FunctionArn']
         print response
