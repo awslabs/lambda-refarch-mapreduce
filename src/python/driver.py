@@ -103,7 +103,7 @@ all_keys = []
 for obj in s3.Bucket(bucket).objects.filter(Prefix=config["prefix"]).all():
     all_keys.append(obj)
 
-bsize = lambdautils.compute_batch_size(all_keys, lambda_memory)
+bsize = lambdautils.compute_batch_size(all_keys, lambda_memory, concurrent_lambdas)
 batches = lambdautils.batch_creator(all_keys, bsize)
 n_mappers = len(batches)
 document = xray_recorder.current_subsegment()

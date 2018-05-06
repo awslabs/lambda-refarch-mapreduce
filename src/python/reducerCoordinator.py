@@ -60,7 +60,7 @@ def get_mapper_files(files):
 
 def get_reducer_batch_size(keys):
     #TODO: Paramertize memory size
-    batch_size = lambdautils.compute_batch_size(keys, 1536)
+    batch_size = lambdautils.compute_batch_size(keys, 1536, 1000)
     return max(batch_size, 2) # At least 2 in a batch - Condition for termination
 
 def check_job_done(files):
