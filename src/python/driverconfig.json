@@ -1,11 +1,12 @@
 {
       "bucket": "big-data-benchmark",
       "prefix": "pavlo/text/1node/uservisits/",
-      "jobBucket": "smallya-useast-1",
+      "jobBucket": "aws-bigdata-mapreduce-sr18",
       "region": "us-east-1",
       "lambdaMemory": 1536,
-      "concurrentLambdas": 100,
+      "concurrentLambdas": 1000,
       "lambda_read_timeout": 300,
+      "boto_max_connections": 1000,
       "mapper": {
             "name": "mapper.py",
             "handler": "mapper.lambda_handler",

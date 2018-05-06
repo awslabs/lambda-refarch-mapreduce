@@ -92,9 +92,10 @@ region = config["region"]
 lambda_memory = config["lambdaMemory"]
 concurrent_lambdas = config["concurrentLambdas"]
 lambda_read_timeout = config["lambda_read_timeout"]
+boto_max_connections = config["boto_max_connections"]
 
 # Setting longer timeout for reading lambda results and larger connections pool
-lambda_config = Config(read_timeout=lambda_read_timeout, max_pool_connections=50)
+lambda_config = Config(read_timeout=lambda_read_timeout, max_pool_connections=boto_max_connections)
 lambda_client = boto3.client('lambda', config=lambda_config)
 
 # Fetch all the keys that match the prefix
