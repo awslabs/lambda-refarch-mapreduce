@@ -45,7 +45,7 @@ class LambdaManager(object):
                       Description = self.function_name,
                       MemorySize = self.memory,
                       Timeout =  self.timeout,
-                      TracingConfig={'Mode':'Active'}
+                      TracingConfig={'Mode':'PassThrough'}
                     )
         self.function_arn = response['FunctionArn']
         print response
@@ -127,7 +127,7 @@ class LambdaManager(object):
         response = log_client.delete_log_group(logGroupName='/aws/lambda/' + func_name)
         return response
 
-def compute_batch_size(keys, lambda_memory, gzip=False):
+def compute_batch_size(keys, lambda_memory, concurrent_lambdas):
     max_mem_for_data = 0.6 * lambda_memory * 1000 * 1000; 
     size = 0.0
     for key in keys:
@@ -137,8 +137,11 @@ def compute_batch_size(keys, lambda_memory, gzip=False):
             size += key.size
     avg_object_size = size/len(keys)
     print "Dataset size: %s, nKeys: %s, avg: %s" %(size, len(keys), avg_object_size)
-    b_size = int(round(max_mem_for_data/avg_object_size))
-    return b_size 
+    if avg_object_size < max_mem_for_data and len(keys) < concurrent_lambdas:
+        b_size = 1
+    else:
+        b_size = int(round(max_mem_for_data/avg_object_size))
+    return b_size
 
 def batch_creator(all_keys, batch_size):
     '''

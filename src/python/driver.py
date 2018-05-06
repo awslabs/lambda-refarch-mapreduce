@@ -92,9 +92,10 @@ region = config["region"]
 lambda_memory = config["lambdaMemory"]
 concurrent_lambdas = config["concurrentLambdas"]
 lambda_read_timeout = config["lambda_read_timeout"]
+boto_max_connections = config["boto_max_connections"]
 
 # Setting longer timeout for reading lambda results and larger connections pool
-lambda_config = Config(read_timeout=lambda_read_timeout, max_pool_connections=50)
+lambda_config = Config(read_timeout=lambda_read_timeout, max_pool_connections=boto_max_connections)
 lambda_client = boto3.client('lambda', config=lambda_config)
 
 # Fetch all the keys that match the prefix
@@ -102,7 +103,7 @@ all_keys = []
 for obj in s3.Bucket(bucket).objects.filter(Prefix=config["prefix"]).all():
     all_keys.append(obj)
 
-bsize = lambdautils.compute_batch_size(all_keys, lambda_memory)
+bsize = lambdautils.compute_batch_size(all_keys, lambda_memory, concurrent_lambdas)
 batches = lambdautils.batch_creator(all_keys, bsize)
 n_mappers = len(batches)
 document = xray_recorder.current_subsegment()
