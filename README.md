@@ -36,11 +36,11 @@ To run the example, you must have the AWS CLI set up. Your credentials must have
 1. Create your S3 bucket to store the intermediaries and result
 (remember to use your own bucket name due to S3 namespace)
 
-  $ aws s3 mb s3://biglambda-s3-bucket
+  $ aws s3 mb s3://YOUR-BUCKET-NAME-HERE
 
 2. Update the policy.json with your S3 bucket name
 
-  $ sed -i 's/s3:::MY-S3-BUCKET/s3:::biglambda-s3-bucket/' policy.json
+  $ sed -i 's/s3:::YOUR-BUCKET-NAME-HERE/s3:::biglambda-s3-bucket/' policy.json
 
 3. Create the IAM role with respective policy
 
@@ -69,7 +69,7 @@ For the jobBucket field, enter an S3 bucket in your account that you wish to use
 {
         "bucket": "big-data-benchmark",
         "prefix": "pavlo/text/1node/uservisits/",
-        "jobBucket": "biglambda-s3-bucket",
+        "jobBucket": "YOUR-BUCKET-NAME-HERE",
         "concurrentLambdas": 100,
         "mapper": {
             "name": "mapper.py",

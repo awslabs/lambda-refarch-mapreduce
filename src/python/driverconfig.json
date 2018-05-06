@@ -1,7 +1,7 @@
 {
       "bucket": "big-data-benchmark",
       "prefix": "pavlo/text/1node/uservisits/",
-      "jobBucket": "aws-bigdata-mapreduce-sr18",
+      "jobBucket": "ENTER YOUR BUCKET HERE",
       "region": "us-east-1",
       "lambdaMemory": 1536,
       "concurrentLambdas": 1000,
