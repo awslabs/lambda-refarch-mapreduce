@@ -33,7 +33,10 @@ Check cf_template.yaml that you can extend as needed.
 
 To run the example, you must have the AWS CLI set up. Your credentials must have access to create and invoke Lambda and access to list, read, and write to a S3 bucket.
 
-1. Start CLoudFormation console and create new stack using cf_template.yaml. CloudFormation will create S3 bucket for the results, biglambda_role IAM role for AWS Lambda execution and appropriate inline policy, SSM Parameter Store parameters used by the Lambda functions.
+1. Start CloudFormation console and create new stack using cf_template.yaml. CloudFormation will create: 
+* S3 bucket for the results, 
+* biglambda_role IAM role for AWS Lambda execution with appropriate inline policy, 
+* SSM Parameter Store parameters used by the Lambda functions.
 
 2. [Run AWS X-Ray Daemon locally](https://docs.aws.amazon.com/xray/latest/devguide/xray-daemon-local.html), otherwise you will not be able to see traces from the local driver in AWS X-Ray console. However, traces from Reducer Coordinator Lambda functions will be present.
 
@@ -43,7 +46,7 @@ To run the example, you must have the AWS CLI set up. Your credentials must have
 
 ### Modifying the Job 
 
-If needed you can modify cf_template.yaml and update CloudFormation stack
+You can modify cf_template.yaml and update CloudFormation stack.
 
 ### Outputs 
 
