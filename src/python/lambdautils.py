@@ -16,8 +16,10 @@ import boto3
 import botocore
 import os
 
+SSM_PATH = '/biglambda/'
+
 class LambdaManager(object):
-    def __init__ (self, l, s3, region, codepath, job_id, fname, handler, lmem=1536):
+    def __init__ (self, l, s3, region, codepath, job_id, fname, handler, role, lmem=1536):
         self.awslambda = l;
         self.region = "us-east-1" if region is None else region
         self.s3 = s3
@@ -25,7 +27,7 @@ class LambdaManager(object):
         self.job_id = job_id
         self.function_name = fname
         self.handler = handler
-        self.role = os.environ.get('serverless_mapreduce_role')
+        self.role = role
         self.memory = lmem 
         self.timeout = 300
         self.function_arn = None # set after creation
@@ -45,7 +47,7 @@ class LambdaManager(object):
                       Description = self.function_name,
                       MemorySize = self.memory,
                       Timeout =  self.timeout,
-                      TracingConfig={'Mode':'Active'}
+                      TracingConfig={'Mode':'PassThrough'}
                     )
         self.function_arn = response['FunctionArn']
         print response
@@ -127,7 +129,7 @@ class LambdaManager(object):
         response = log_client.delete_log_group(logGroupName='/aws/lambda/' + func_name)
         return response
 
-def compute_batch_size(keys, lambda_memory, gzip=False):
+def compute_batch_size(keys, lambda_memory, concurrent_lambdas):
     max_mem_for_data = 0.6 * lambda_memory * 1000 * 1000; 
     size = 0.0
     for key in keys:
@@ -137,8 +139,11 @@ def compute_batch_size(keys, lambda_memory, gzip=False):
             size += key.size
     avg_object_size = size/len(keys)
     print "Dataset size: %s, nKeys: %s, avg: %s" %(size, len(keys), avg_object_size)
-    b_size = int(round(max_mem_for_data/avg_object_size))
-    return b_size 
+    if avg_object_size < max_mem_for_data and len(keys) < concurrent_lambdas:
+        b_size = 1
+    else:
+        b_size = int(round(max_mem_for_data/avg_object_size))
+    return b_size
 
 def batch_creator(all_keys, batch_size):
     '''
@@ -156,3 +161,35 @@ def batch_creator(all_keys, batch_size):
     if len(batch):
         batches.append(batch)
     return batches
+
+def load_config():
+    ssm_client = boto3.client('ssm')
+    config_dict={}
+
+    # based on https://gist.github.com/sonodar/b3c80c8b9e60f4e6dcda9108c46a6089
+    def read_params(NextToken = None):
+        params = {
+        'Path': SSM_PATH,
+        'Recursive': False,
+        'WithDecryption': False
+        }
+        if NextToken is not None:
+            params['NextToken'] = NextToken
+        return ssm_client.get_parameters_by_path(**params)
+    def parameters():
+        NextToken = None
+        while True:
+            response = read_params(NextToken)
+            parameters = response['Parameters']
+            if len(parameters) == 0:
+                break
+            for parameter in parameters:
+                yield parameter
+            if 'NextToken' not in response:
+                break
+            NextToken = response['NextToken']
+
+    config_dict['ssmPath']=SSM_PATH
+    for parameter in parameters():
+        config_dict[parameter.get('Name').replace(SSM_PATH,'')]= parameter.get('Value')
+    return config_dict

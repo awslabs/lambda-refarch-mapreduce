@@ -22,7 +22,7 @@ By leveraging this framework, you can build a cost-effective pipeline to run ad 
     * Cloudwatch log access (logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents)
     * X-Ray write access (xray:PutTraceSegments, xray:PutTelemetryRecords)
  
-Check policy.json for a sample that you can use or extend.
+Check cf_template.yaml that you can extend as needed.
 
 * To execute the driver locally, make sure that you configure your AWS profile with access to: 
     * [S3](http://docs.aws.amazon.com/AmazonS3/latest/dev/example-policies-s3.html)
@@ -33,62 +33,17 @@ Check policy.json for a sample that you can use or extend.
 
 To run the example, you must have the AWS CLI set up. Your credentials must have access to create and invoke Lambda and access to list, read, and write to a S3 bucket.
 
-1. Create your S3 bucket to store the intermediaries and result
-(remember to use your own bucket name due to S3 namespace)
+1. Start CLoudFormation console and create new stack using cf_template.yaml. CloudFormation will create S3 bucket for the results, biglambda_role IAM role for AWS Lambda execution and appropriate inline policy, SSM Parameter Store parameters used by the Lambda functions.
 
-  $ aws s3 mb s3://biglambda-s3-bucket
+2. [Run AWS X-Ray Daemon locally](https://docs.aws.amazon.com/xray/latest/devguide/xray-daemon-local.html), otherwise you will not be able to see traces from the local driver in AWS X-Ray console. However, traces from Reducer Coordinator Lambda functions will be present.
 
-2. Update the policy.json with your S3 bucket name
-
-  $ sed -i 's/s3:::MY-S3-BUCKET/s3:::biglambda-s3-bucket/' policy.json
-
-3. Create the IAM role with respective policy
-
-  $ python create-biglambda-role.py
-
-4. Use the output ARN from the script. Set the serverless_mapreduce_role environment variable:
-
-  $ export serverless_mapreduce_role=arn:aws:iam::MY-ACCOUNT-ID:role/biglambda_role
-
-5. Make edits to driverconfig.json and verify
-
-  $ cat driverconfig.json 
-
-6. [Run AWS X-Ray Daemon locally](https://docs.aws.amazon.com/xray/latest/devguide/xray-daemon-local.html), otherwise you will not be able to see traces from the local driver in AWS X-Ray console. However, traces from Reducer Coordinator Lambda functions will be present.
-
-7. Run the driver
+3. Run the driver
  
 	$ python driver.py
 
-### Modifying the Job (driverconfig.json)
+### Modifying the Job 
 
-For the jobBucket field, enter an S3 bucket in your account that you wish to use for the example. Make changes to the other fields if you have different source data, or if you have renamed the files.
-
-```
-
-{
-        "bucket": "big-data-benchmark",
-        "prefix": "pavlo/text/1node/uservisits/",
-        "jobBucket": "biglambda-s3-bucket",
-        "concurrentLambdas": 100,
-        "mapper": {
-            "name": "mapper.py",
-            "handler": "mapper.lambda_handler",
-            "zip": "mapper.zip"
-        },
-        "reducer":{
-            "name": "reducer.py",
-            "handler": "reducer.lambda_handler",
-            "zip": "reducer.zip"
-        },
-        "reducerCoordinator":{
-            "name": "reducerCoordinator.py",
-            "handler": "reducerCoordinator.lambda_handler",
-            "zip": "reducerCoordinator.zip"
-        },
-}
-
-```
+If needed you can modify cf_template.yaml and update CloudFormation stack
 
 ### Outputs 
 
@@ -111,10 +66,8 @@ smallya$ head –n 3 result
 To remove all resources created by this example, do the following:
 
 1. Delete all objects from the S3 bucket listed in `jobBucket` created by the job.
-1. Delete the Cloudwatch log groups for each of the Lambda functions created by the job. 
-1. Delete the created IAM role
-
-    $ python delete-biglambda-role.py
+2. Delete CloudFormation stack created for the job
+3. Delete the Cloudwatch log groups for each of the Lambda functions created by the job. 
 
 ## Languages
 * Python 2.7 (active development)
@@ -179,4 +132,4 @@ Serverless MapReduce Cost:
 ```
 
 ## License
-This reference architecture sample is licensed under  the Amazon Software License.
+This reference architecture sample is licensed under the Amazon Software License.

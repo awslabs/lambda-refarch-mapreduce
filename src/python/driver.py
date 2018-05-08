@@ -40,69 +40,59 @@ patch_all()
 logging.basicConfig(level='WARNING')
 logging.getLogger('aws_xray_sdk').setLevel(logging.ERROR)
 # collect all tracing samples 
-SAMPLING_RULES = {"version": 1, "default": {"fixed_target": 1, "rate": 1}}
+SAMPLING_RULES={"version": 1, "default": {"fixed_target": 1,"rate": 1}}
 xray_recorder.configure(sampling_rules=SAMPLING_RULES)
 
 xray_recorder.begin_segment('Map Reduce Driver')
 # create an S3 session
 s3 = boto3.resource('s3')
 s3_client = boto3.client('s3')
-
-JOB_INFO = 'jobinfo.json'
+ssm_client = boto3.client('ssm')
 
 ### UTILS ####
 @xray_recorder.capture('zipLambda')
 def zipLambda(fname, zipname):
     # faster to zip with shell exec
-    subprocess.call(['zip', zipname] + glob.glob(fname) + glob.glob(JOB_INFO) +
-                        glob.glob("lambdautils.py"))
+    subprocess.call(['zip', zipname] + glob.glob(fname) + glob.glob("lambdautils.py"))
 
 @xray_recorder.capture('write_to_s3')
 def write_to_s3(bucket, key, data, metadata):
     s3.Bucket(bucket).put_object(Key=key, Body=data, Metadata=metadata)
 
-@xray_recorder.capture('write_job_config')
-def write_job_config(job_id, job_bucket, n_mappers, r_func, r_handler):
-    fname = "jobinfo.json"; 
-    with open(fname, 'w') as f:
-        data = json.dumps({
-            "jobId": job_id,
-            "jobBucket" : job_bucket,
-            "mapCount": n_mappers,
-            "reducerFunction": r_func,
-            "reducerHandler": r_handler
-            }, indent=4);
-        f.write(data)
-
-
 ######### MAIN ############# 
 
-## JOB ID 
-job_id =  "bl-release"
-
 # Config
-config = json.loads(open('driverconfig.json', 'r').read())
+config = lambdautils.load_config()
 
 # 1. Get all keys to be processed  
 xray_recorder.begin_subsegment('Get all keys to be processed')
+
 # init 
+job_id = config["jobId"]
 bucket = config["bucket"]
 job_bucket = config["jobBucket"]
 region = config["region"]
-lambda_memory = config["lambdaMemory"]
-concurrent_lambdas = config["concurrentLambdas"]
-lambda_read_timeout = config["lambda_read_timeout"]
+lambda_memory = int(config["lambdaMemory"])
+concurrent_lambdas = int(config["concurrentLambdas"])
+mapper_config = json.loads(config["mapper"])
+reducer_config = json.loads(config["reducer"])
+reducerCoordinator_config = json.loads(config["reducerCoordinator"])
+lambda_env = {'Variables': {'ssmPath': config['ssmPath']}}
+lambda_read_timeout = int(config["lambdaReadTimeout"])
+ssm_path = config["ssmPath"]
+lambda_execution_role = config["lambdaExecutionRole"]
+boto_max_connections = int(config["boto_max_connections"])
 
 # Setting longer timeout for reading lambda results and larger connections pool
-lambda_config = Config(read_timeout=lambda_read_timeout, max_pool_connections=50)
-lambda_client = boto3.client('lambda', config=lambda_config)
+lambda_config=Config(read_timeout=lambda_read_timeout, max_pool_connections=boto_max_connections)
+lambda_client = boto3.client('lambda',config=lambda_config)
 
 # Fetch all the keys that match the prefix
 all_keys = []
 for obj in s3.Bucket(bucket).objects.filter(Prefix=config["prefix"]).all():
     all_keys.append(obj)
 
-bsize = lambdautils.compute_batch_size(all_keys, lambda_memory)
+bsize = lambdautils.compute_batch_size(all_keys, lambda_memory, concurrent_lambdas)
 batches = lambdautils.batch_creator(all_keys, bsize)
 n_mappers = len(batches)
 document = xray_recorder.current_subsegment()
@@ -120,31 +110,32 @@ reducer_lambda_name = L_PREFIX + "-reducer-" +  job_id;
 rc_lambda_name = L_PREFIX + "-rc-" +  job_id;
 
 # write job config
-write_job_config(job_id, job_bucket, n_mappers, reducer_lambda_name, config["reducer"]["handler"]);
+ssm_client.put_parameter(Name=ssm_path+'mapCount',Value=str(n_mappers),Type='String',Overwrite=True)
+ssm_client.put_parameter(Name=ssm_path+'reducerFunction',Value=reducer_lambda_name,Type='String',Overwrite=True)
 
-zipLambda(config["mapper"]["name"], config["mapper"]["zip"])
-zipLambda(config["reducer"]["name"], config["reducer"]["zip"])
-zipLambda(config["reducerCoordinator"]["name"], config["reducerCoordinator"]["zip"])
+zipLambda(mapper_config["name"], mapper_config["zip"])
+zipLambda(reducer_config["name"], reducer_config["zip"])
+zipLambda(reducerCoordinator_config["name"], reducerCoordinator_config["zip"])
 xray_recorder.end_subsegment() #Prepare Lambda functions
 
 # mapper
 xray_recorder.begin_subsegment('Create mapper Lambda function')
-l_mapper = lambdautils.LambdaManager(lambda_client, s3_client, region, config["mapper"]["zip"], job_id,
-        mapper_lambda_name, config["mapper"]["handler"])
+l_mapper = lambdautils.LambdaManager(lambda_client, s3_client, region, mapper_config["zip"], job_id,
+        mapper_lambda_name, mapper_config["handler"], lambda_execution_role, lambda_memory)
 l_mapper.update_code_or_create_on_noexist()
 xray_recorder.end_subsegment() #Create mapper Lambda function
 
 # Reducer func
 xray_recorder.begin_subsegment('Create reducer Lambda function')
-l_reducer = lambdautils.LambdaManager(lambda_client, s3_client, region, config["reducer"]["zip"], job_id,
-        reducer_lambda_name, config["reducer"]["handler"])
+l_reducer = lambdautils.LambdaManager(lambda_client, s3_client, region, reducer_config["zip"], job_id,
+        reducer_lambda_name, reducer_config["handler"], lambda_execution_role, lambda_memory)
 l_reducer.update_code_or_create_on_noexist()
 xray_recorder.end_subsegment() #Create reducer Lambda function
 
 # Coordinator
 xray_recorder.begin_subsegment('Create reducer coordinator Lambda function')
-l_rc = lambdautils.LambdaManager(lambda_client, s3_client, region, config["reducerCoordinator"]["zip"], job_id,
-        rc_lambda_name, config["reducerCoordinator"]["handler"])
+l_rc = lambdautils.LambdaManager(lambda_client, s3_client, region, reducerCoordinator_config["zip"], job_id,
+        rc_lambda_name, reducerCoordinator_config["handler"], lambda_execution_role, lambda_memory)
 l_rc.update_code_or_create_on_noexist()
 
 # Add permission to the coordinator
@@ -162,7 +153,7 @@ data = json.dumps({
                 "totalS3Files": len(all_keys),
                 "startTime": time.time()
                 })
-xray_recorder.current_subsegment().put_metadata("Job data: ", data, "Write job data to S3")
+xray_recorder.current_subsegment().put_metadata("Job data: ", data, "Write job data to S3");
 write_to_s3(job_bucket, j_key, data, {})
 xray_recorder.end_subsegment() #Write job data to S3
 
@@ -177,11 +168,8 @@ def invoke_lambda(batches, m_id):
     '''
     lambda invoke function
     '''
-
-    #batch = [k['Key'] for k in batches[m_id-1]]
     batch = [k.key for k in batches[m_id-1]]
-    xray_recorder.current_segment().put_annotation("batch_for_mapper_"+str(m_id), str(batch))
-    #print "invoking", m_id, len(batch)
+    xray_recorder.current_segment().put_annotation("batch_for_mapper_"+str(m_id), str(batch));
     resp = lambda_client.invoke( 
             FunctionName = mapper_lambda_name,
             InvocationType = 'RequestResponse',
@@ -209,7 +197,7 @@ while mappers_executed < n_mappers:
     nm = min(concurrent_lambdas, n_mappers)
     results = pool.map(invoke_lambda_partial, Ids[mappers_executed: mappers_executed + nm])
     mappers_executed += nm
-    xray_recorder.current_subsegment().put_metadata("Mapper lambdas executed: ", mappers_executed, "Invoke mappers")
+    xray_recorder.current_subsegment().put_metadata("Mapper lambdas executed: ", mappers_executed, "Invoke mappers");
 
 pool.close()
 pool.join()

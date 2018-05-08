@@ -1,0 +1,253 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  SSMJobID:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Value: bl-release
+      Type: String
+      Name: !Join 
+        - '/'
+        - - !Ref SSMPrefix
+          - 'jobId'
+  SSMMapCount:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Value: 0
+      Type: String
+      Name: !Join 
+        - '/'
+        - - !Ref SSMPrefix
+          - 'mapCount'
+  SSMReducerFunction:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Value: ' '
+      Type: String
+      Name: !Join 
+        - '/'
+        - - !Ref SSMPrefix
+          - 'reducerFunction'
+  SSMBotoMaxConnections:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Value: 1000
+      Type: String
+      Name: !Join 
+        - '/'
+        - - !Ref SSMPrefix
+          - 'boto_max_connections'
+  SSMBucket:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Value: big-data-benchmark
+      Type: String
+      Name: !Join 
+        - '/'
+        - - !Ref SSMPrefix
+          - 'bucket'
+  SSMBucketPrefix:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Value: pavlo/text/1node/uservisits/
+      Type: String
+      Name: !Join 
+        - '/'
+        - - !Ref SSMPrefix
+          - 'prefix'
+  SSMJobBucket:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Value: !Ref JobBucket
+      Type: String
+      Name: !Join 
+        - '/'
+        - - !Ref SSMPrefix
+          - 'jobBucket'
+  SSMRegion:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Value: !Ref Region
+      Type: String
+      Name: !Join 
+        - '/'
+        - - !Ref SSMPrefix
+          - 'region'
+  SSMLambdaMemory:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Value: 1536
+      Type: String
+      Name: !Join 
+        - '/'
+        - - !Ref SSMPrefix
+          - 'lambdaMemory'
+  SSMConcurrentLambdas:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Value: 1000
+      Type: String
+      Name: !Join 
+        - '/'
+        - - !Ref SSMPrefix
+          - 'concurrentLambdas'
+  SSMMapper:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Value: '{ "name": "mapper.py","handler": "mapper.lambda_handler","zip": "mapper.zip"}'
+      Type: String
+      Name: !Join 
+        - '/'
+        - - !Ref SSMPrefix
+          - 'mapper'
+  SSMReducer:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Value: '{ "name": "reducer.py","handler": "reducer.lambda_handler","zip": "reducer.zip"}'
+      Type: String
+      Name: !Join 
+        - '/'
+        - - !Ref SSMPrefix
+          - 'reducer'
+  SSMReducerCoordinator:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Value: '{ "name": "reducerCoordinator.py","handler": "reducerCoordinator.lambda_handler","zip": "reducerCoordinator.zip"}'
+      Type: String
+      Name: !Join 
+        - '/'
+        - - !Ref SSMPrefix
+          - 'reducerCoordinator'
+  SSMLambdaReadTimeout:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Value: 300
+      Type: String
+      Name: !Join 
+        - '/'
+        - - !Ref SSMPrefix
+          - 'lambdaReadTimeout'
+  SSMLambdaExecutionRole:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Value: !GetAtt BigLambdaRole.Arn
+      Type: String
+      Name: !Join 
+        - '/'
+        - - !Ref SSMPrefix
+          - 'lambdaExecutionRole'
+  BigLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: biglambda_role
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+        - 
+          PolicyName: BigLambdaPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+            - 
+              Action:
+                - 'lambda:AddPermission'
+                - 'lambda:CreateEventSourceMapping'
+                - 'lambda:CreateFunction'
+                - 'lambda:DeleteEventSourceMapping'
+                - 'lambda:DeleteFunction'
+                - 'lambda:GetEventSourceMapping'
+                - 'lambda:InvokeAsync'
+                - 'lambda:InvokeFunction'
+                - 'lambda:ListEventSourceMappings'
+                - 'lambda:RemovePermission'
+                - 'lambda:UpdateEventSourceMapping'
+                - 'lambda:UpdateFunctionCode'
+                - 'lambda:UpdateFunctionConfiguration'
+              Effect: Allow
+              Resource: "*"
+            - 
+              Action:
+                - 'logs:CreateLogGroup'
+                - 'logs:CreateLogStream'
+                - 'logs:DeleteLogGroup'
+                - 'logs:DeleteLogStream'
+                - 'logs:GetLogEvents'
+                - 'logs:PutLogEvents'
+              Effect: Allow
+              Resource: "*"
+            - 
+              Action:
+                - 'xray:PutTraceSegments'
+                - 'xray:PutTelemetryRecords'
+              Effect: Allow
+              Resource: "*"
+            - 
+              Action:
+                - 'ssm:DescribeParameters'
+              Effect: Allow
+              Resource: "*"
+            - 
+              Action:
+                - 's3:GetObject'
+                - 's3:ListBucket'
+              Effect: Allow
+              Resource: "*"
+            - 
+              Action:
+                - 's3:DeleteObject'
+                - 's3:DeleteObjectVersion'
+                - 's3:GetBucketAcl'
+                - 's3:GetBucketLocation'
+                - 's3:GetBucketLogging'
+                - 's3:GetBucketNotification'
+                - 's3:GetBucketPolicy'
+                - 's3:GetObjectAcl'
+                - 's3:GetObjectVersion'
+                - 's3:GetObjectVersionAcl'
+                - 's3:ListAllMyBuckets'
+                - 's3:PutBucketNotification'
+                - 's3:PutObject'
+                - 's3:PutObjectAcl'
+                - 's3:PutObjectVersionAcl'
+              Effect: Allow
+              Resource: !Join
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref JobBucket
+                  - '/*'
+            - 
+              Action:
+                - 'ssm:GetParameters'
+                - 'ssm:GetParametersByPath'
+                - 'ssm:GetParameter'
+              Effect: Allow
+              Resource: !Join
+                - ''
+                - - 'arn:aws:ssm:'
+                  - !Ref Region
+                  - ':'
+                  - !Ref AWS::AccountId
+                  - ':parameter'
+                  - !Ref SSMPrefix
+                  - '/*'
+  S3JobBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref JobBucket
+Parameters:
+  SSMPrefix:
+    Type: String
+    Default: /biglambda 
+    Description: Enter SSM parameter prefix. Must start with / (default is /biglambda). You will need to update SSM_PATH constant in lambdautils.py file with the value entered here.
+  JobBucket:
+    Type: String
+    Default: ENTER YOUR BUCKET HERE 
+    Description: S3 bucket for results
+  Region:
+    Type: String
+    Default: us-west-2 
+    Description: AWS Region to use for AWS Lambda
