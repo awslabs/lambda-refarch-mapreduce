@@ -49,15 +49,34 @@ s3 = boto3.resource('s3')
 s3_client = boto3.client('s3')
 ssm_client = boto3.client('ssm')
 
+JOB_INFO = 'jobinfo.json'
+
 ### UTILS ####
 @xray_recorder.capture('zipLambda')
 def zipLambda(fname, zipname):
     # faster to zip with shell exec
-    subprocess.call(['zip', zipname] + glob.glob(fname) + glob.glob("lambdautils.py"))
+    subprocess.call(['zip', zipname] + glob.glob(fname) + glob.glob(JOB_INFO) + 
+                        glob.glob("lambdautils.py"))
 
 @xray_recorder.capture('write_to_s3')
 def write_to_s3(bucket, key, data, metadata):
     s3.Bucket(bucket).put_object(Key=key, Body=data, Metadata=metadata)
+
+@xray_recorder.capture('write_job_config')
+def write_job_config(job_id, job_bucket, n_mappers, r_func, r_handler, lambdaMemory, concurrent_lambdas):
+    fname = "jobinfo.json"; 
+    with open(fname, 'w') as f:
+        data = json.dumps({
+            "jobId": job_id,
+            "jobBucket" : job_bucket,
+            "mapCount": n_mappers,
+            "reducerFunction": r_func,
+            "reducerHandler": r_handler,
+            "lambdaMemory": lambdaMemory,
+            "concurrentLambdas": concurrent_lambdas
+            }, indent=4);
+        f.write(data)
+
 
 ######### MAIN ############# 
 
@@ -110,8 +129,7 @@ reducer_lambda_name = L_PREFIX + "-reducer-" +  job_id;
 rc_lambda_name = L_PREFIX + "-rc-" +  job_id;
 
 # write job config
-ssm_client.put_parameter(Name=ssm_path+'mapCount',Value=str(n_mappers),Type='String',Overwrite=True)
-ssm_client.put_parameter(Name=ssm_path+'reducerFunction',Value=reducer_lambda_name,Type='String',Overwrite=True)
+write_job_config(job_id, job_bucket, n_mappers, reducer_lambda_name, reducer_config["handler"], lambda_memory, concurrent_lambdas)
 
 zipLambda(mapper_config["name"], mapper_config["zip"])
 zipLambda(reducer_config["name"], reducer_config["zip"])

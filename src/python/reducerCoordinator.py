@@ -23,8 +23,6 @@ import re
 import StringIO
 import time
 import urllib
-import os
-
 
 DEFAULT_REGION = "us-east-1";
 
@@ -38,14 +36,6 @@ REDUCER_STEP = 1;
 s3 = boto3.resource('s3')
 s3_client = boto3.client('s3')
 lambda_client = boto3.client('lambda')
-
-config = lambdautils.load_config()
-
-job_id =  config["jobId"]
-map_count = int(config["mapCount"])
-r_function_name = config["reducerFunction"] 
-lambda_memory = int(config["lambdaMemory"])
-concurrent_lambdas = int(config["concurrentLambdas"])
 
 # Write to S3 Bucket
 def write_to_s3(bucket, key, data, metadata):
@@ -68,7 +58,7 @@ def get_mapper_files(files):
             ret.append(mf)
     return ret
 
-def get_reducer_batch_size(keys):
+def get_reducer_batch_size(keys, lambda_memory, concurrent_lambdas):
     batch_size = lambdautils.compute_batch_size(keys, lambda_memory, concurrent_lambdas)
     return max(batch_size, 2) # At least 2 in a batch - Condition for termination
 
@@ -79,7 +69,7 @@ def check_job_done(files):
             return True
     return False
 
-def get_reducer_state_info(files, job_bucket):
+def get_reducer_state_info(files, job_id, job_bucket):
         
     reducers = [];
     max_index = 0;
@@ -131,12 +121,21 @@ def lambda_handler(event, context):
     # Job Bucket. We just got a notification from this bucket
     bucket = event['Records'][0]['s3']['bucket']['name']
 
+    #key = urllib.unquote_plus(event['Records'][0]['s3']['object']['key'].encode('utf8'))
+   
+    config = json.loads(open('./jobinfo.json', "r").read())
+    
+    job_id =  config["jobId"]
+    map_count = config["mapCount"] 
+    r_function_name = config["reducerFunction"] 
+    r_handler = config["reducerHandler"] 
+    lambda_memory = config["lambdaMemory"]
+    concurrent_lambdas = config["concurrentLambdas"]
+
     ### Get Mapper Finished Count ###
     
     # Get job files
     files = s3_client.list_objects(Bucket=bucket, Prefix=job_id)["Contents"]
-    print "Listed files:"
-    print files
 
     if check_job_done(files) == True:
         print "Job done!!! Check the result file"
@@ -150,7 +149,7 @@ def lambda_handler(event, context):
         if map_count == len(mapper_keys):
             
             # All the mappers have finished, time to schedule the reducers
-            stepInfo = get_reducer_state_info(files, bucket)
+            stepInfo = get_reducer_state_info(files, job_id, bucket)
 
             print "stepInfo", stepInfo
 
@@ -162,7 +161,7 @@ def lambda_handler(event, context):
                 return
                  
             # Compute this based on metadata of files
-            r_batch_size = get_reducer_batch_size(reducer_keys); 
+            r_batch_size = get_reducer_batch_size(reducer_keys, lambda_memory, concurrent_lambdas); 
                 
             print "Starting the the reducer step", step_number
             print "Batch Size", r_batch_size

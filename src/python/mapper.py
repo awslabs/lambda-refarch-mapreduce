@@ -35,7 +35,6 @@ def write_to_s3(bucket, key, data, metadata):
 def lambda_handler(event, context):
     
     start_time = time.time()
-    print event
 
     job_bucket = event['jobBucket']
     src_bucket = event['bucket']
@@ -65,8 +64,12 @@ def lambda_handler(event, context):
                 output[srcIp] += float(data[3])
             except Exception, e:
                 print e
+                #err += '%s' % e
 
     time_in_secs = (time.time() - start_time)
+    #timeTaken = time_in_secs * 1000000000 # in 10^9 
+    #s3DownloadTime = 0
+    #totalProcessingTime = 0 
     pret = [len(src_keys), line_count, time_in_secs, err]
     mapper_fname = "%s/%s%s" % (job_id, TASK_MAPPER_PREFIX, mapper_id) 
     metadata = {
