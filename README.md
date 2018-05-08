@@ -37,12 +37,31 @@ To run the example, you must have the AWS CLI set up. Your credentials must have
 * S3 bucket for the results, 
 * biglambda_role IAM role for AWS Lambda execution with appropriate inline policy, 
 * SSM Parameter Store parameters used by the Lambda functions.
+* (Optionally) AWS Cloud9 IDE environment
 
 2. [Run AWS X-Ray Daemon locally](https://docs.aws.amazon.com/xray/latest/devguide/xray-daemon-local.html), otherwise you will not be able to see traces from the local driver in AWS X-Ray console. However, traces from Reducer Coordinator Lambda functions will be present.
 
 3. Run the driver
  
 	$ python driver.py
+
+### AWS Cloud9 IDE
+You can select AWS Cloud9 IDE instance type while creating CloudFormation stack. By default it is set to "None" (does not create IDE). After CloudFormation stack with instance type selected is created check Outputs section of the stack description for Cloud9 IDE URL. Code from this Git repository will be pulled to that instance already. You will need to install Boto3 and X-Ray Python SDK by running folowing commands in the IDE Bash tab:
+
+    $ sudo python -m pip install boto3
+    $ sudo python -m pip install aws-xray-sdk
+
+Navigate to the code location
+
+    $ cd lambda-refarch-mapreduce/src/python
+
+Run the driver
+
+    $ python driver.py
+
+If you'd like to run code from IDE directly make sure to update current working directory (CWD) in the default Runner or create new [Runner](https://docs.aws.amazon.com/cloud9/latest/user-guide/build-run-debug.html)
+
+Note that deleting CloudFormation stack will also delete Cloud9 IDE created as part of it.
 
 ### Modifying the Job 
 

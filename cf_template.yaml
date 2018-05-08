@@ -238,7 +238,31 @@ Resources:
     Type: 'AWS::S3::Bucket'
     Properties:
       BucketName: !Ref JobBucket
+  Cloud9IDE:
+    Condition: CreateCloud9IDE
+    Type: AWS::Cloud9::EnvironmentEC2
+    Properties:
+      Repositories:
+        - RepositoryUrl: https://github.com/giedri/lambda-refarch-mapreduce.git
+          PathComponent: lambda-refarch-mapreduce
+      Description: Lmabda MapReduce Cloud9 IDE
+      InstanceType: t2.medium
+      AutomaticStopTimeMinutes: 30
+      Name: 
+        Ref: AWS::StackName
+Conditions: 
+  CreateCloud9IDE: !Not [!Equals [ !Ref Cloud9InstanceType, None ]]
 Parameters:
+  Cloud9InstanceType:
+    Description: Select Cloud9 IDE instance type or None if you do not want IDE to be created
+    Default: None
+    Type: String
+    AllowedValues:
+      - None
+      - t2.micro
+      - t2.small
+      - t2.large
+    ConstraintDescription: Must specify instance type or select None
   SSMPrefix:
     Type: String
     Default: /biglambda 
@@ -251,3 +275,15 @@ Parameters:
     Type: String
     Default: us-west-2 
     Description: AWS Region to use for AWS Lambda
+Outputs: 
+  Cloud9URL:
+    Condition: CreateCloud9IDE
+    Value:
+      Fn::Join:
+      - ''
+      - - https://
+        - Ref: Region
+        - .console.aws.amazon.com/cloud9/home/environments/
+        - Ref: Cloud9IDE
+    Description: Lambda Map/Reduce Cloud9 environment
+    
