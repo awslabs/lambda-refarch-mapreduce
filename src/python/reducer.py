@@ -24,7 +24,7 @@ import StringIO
 import urllib2
 import time
 
-# create an S3 session
+# create an S3 & Dynamo session
 s3 = boto3.resource('s3')
 s3_client = boto3.client('s3')
 
@@ -39,7 +39,6 @@ def write_to_s3(bucket, key, data, metadata):
 def lambda_handler(event, context):
     
     start_time = time.time()
-    print event
     
     job_bucket = event['jobBucket']
     bucket = event['bucket']
@@ -70,6 +69,9 @@ def lambda_handler(event, context):
             print e
 
     time_in_secs = (time.time() - start_time)
+    #timeTaken = time_in_secs * 1000000000 # in 10^9 
+    #s3DownloadTime = 0
+    #totalProcessingTime = 0 
     pret = [len(reducer_keys), line_count, time_in_secs]
     print "Reducer ouputput", pret
 
