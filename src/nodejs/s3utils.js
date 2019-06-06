@@ -1,7 +1,8 @@
 /*
  *
- * This code has been modified. Portions copyright 2016 - 2016 Amazon.com, Inc. or its affiliates. 
- * Please see LICENSE.txt for applicable license terms and NOTICE.txt for applicable notices.
+ * Copyright (c) 2015 Reason [reason -A- exratione.com]
+ * This code has been modified. Portions copyright 2016 Amazon.com, Inc. or its affiliates.
+ * SPDX-License-Identifier: (MIT AND MIT-0)
  * */
 
 var _ = require('underscore');

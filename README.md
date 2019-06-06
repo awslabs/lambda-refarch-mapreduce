@@ -179,4 +179,5 @@ Serverless MapReduce Cost:
 ```
 
 ## License
-This reference architecture sample is licensed under  the Amazon Software License.
+This sample code is made available under the MIT-0 license. See the LICENSE file.  
+`src/nodejs/s3utils.js` is made available under the MIT license. See the THIRD_PARTY file.
