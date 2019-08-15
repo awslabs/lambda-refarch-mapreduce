@@ -10,7 +10,7 @@ import json
 import lambdautils
 import random
 import re
-import StringIO
+from io import StringIO
 import time
 import urllib
 
@@ -127,33 +127,33 @@ def lambda_handler(event, context):
     files = s3_client.list_objects(Bucket=bucket, Prefix=job_id)["Contents"]
 
     if check_job_done(files) == True:
-        print "Job done!!! Check the result file"
+        print("Job done!!! Check the result file")
         # TODO:  Delete reducer and coordinator lambdas
         return
     else:
         ### Stateless Coordinator logic
         mapper_keys = get_mapper_files(files)
-        print "Mappers Done so far ", len(mapper_keys)
+        print("Mappers Done so far ", len(mapper_keys))
 
         if map_count == len(mapper_keys):
             
             # All the mappers have finished, time to schedule the reducers
             stepInfo = get_reducer_state_info(files, job_id, bucket)
 
-            print "stepInfo", stepInfo
+            print("stepInfo", stepInfo)
 
             step_number = stepInfo[0];
             reducer_keys = stepInfo[1];
                
             if len(reducer_keys) == 0:
-                print "Still waiting to finish Reducer step ", step_number
+                print("Still waiting to finish Reducer step ", step_number)
                 return
                  
             # Compute this based on metadata of files
             r_batch_size = get_reducer_batch_size(reducer_keys); 
                 
-            print "Starting the the reducer step", step_number
-            print "Batch Size", r_batch_size
+            print("Starting the the reducer step", step_number)
+            print("Batch Size", r_batch_size)
                 
             # Create Batch params for the Lambda function
             r_batch_params = lambdautils.batch_creator(reducer_keys, r_batch_size);
@@ -180,13 +180,13 @@ def lambda_handler(event, context):
                             "reducerId": i 
                         })
                     )
-                print resp
+                print(resp)
 
             # Now write the reducer state
             fname = "%s/reducerstate.%s"  % (job_id, step_id)
             write_reducer_state(n_reducers, n_s3, bucket, fname)
         else:
-            print "Still waiting for all the mappers to finish .."
+            print("Still waiting for all the mappers to finish ..")
 
 '''
 ev = {

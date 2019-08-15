@@ -9,7 +9,7 @@ import boto3
 import json
 import random
 import resource
-import StringIO
+from io import StringIO
 import urllib2
 import time
 
@@ -55,14 +55,14 @@ def lambda_handler(event, context):
                     results[srcIp] = 0
                 results[srcIp] += float(val)
         except Exception, e:
-            print e
+            print(e)
 
     time_in_secs = (time.time() - start_time)
     #timeTaken = time_in_secs * 1000000000 # in 10^9 
     #s3DownloadTime = 0
     #totalProcessingTime = 0 
     pret = [len(reducer_keys), line_count, time_in_secs]
-    print "Reducer ouputput", pret
+    print("Reducer ouputput", pret)
 
     if n_reducers == 1:
         # Last reducer file, final result

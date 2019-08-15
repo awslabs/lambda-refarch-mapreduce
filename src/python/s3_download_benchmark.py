@@ -25,8 +25,8 @@ def lambda_handler(event, context):
         contents = response['Body'].read()
 
     time_in_secs = (time.time() - start_time)
-    print "Time taken (s)",  time_in_secs
-    print "Size (MB)", total_bytes / 1024/1024
+    print("Time taken (s)",  time_in_secs)
+    print("Size (MB)", total_bytes / 1024/1024)
     return time_in_secs 
 
 '''

@@ -38,7 +38,7 @@ class LambdaManager(object):
                       TracingConfig={'Mode':'PassThrough'}
                     )
         self.function_arn = response['FunctionArn']
-        print response
+        print(response)
 
     def update_function(self):
         '''
@@ -53,7 +53,7 @@ class LambdaManager(object):
         # parse arn and remove the release number (:n) 
         arn = ":".join(updated_arn.split(':')[:-1])
         self.function_arn = arn 
-        print response
+        print(response)
 
     def update_code_or_create_on_noexist(self):
         '''
@@ -73,7 +73,7 @@ class LambdaManager(object):
           StatementId = '%s' % sId,
           SourceArn = 'arn:aws:s3:::' + bucket
         )
-        print resp
+        print(resp)
 
     def create_s3_eventsource_notification(self, bucket, prefix=None):
         if not prefix:
@@ -126,7 +126,7 @@ def compute_batch_size(keys, lambda_memory, concurrent_lambdas):
         else:
             size += key.size
     avg_object_size = size/len(keys)
-    print "Dataset size: %s, nKeys: %s, avg: %s" %(size, len(keys), avg_object_size)
+    print("Dataset size: %s, nKeys: %s, avg: %s" %(size, len(keys), avg_object_size))
     if avg_object_size < max_mem_for_data and len(keys) < concurrent_lambdas:
         b_size = 1
     else:
