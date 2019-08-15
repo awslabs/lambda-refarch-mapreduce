@@ -9,7 +9,7 @@ import boto3
 import json
 import random
 import resource
-import StringIO
+from io import StringIO
 import time
 
 # create an S3 session
@@ -53,7 +53,7 @@ def lambda_handler(event, context):
                     output[srcIp] = 0
                 output[srcIp] += float(data[3])
             except Exception, e:
-                print e
+                print(e)
                 #err += '%s' % e
 
     time_in_secs = (time.time() - start_time)
@@ -68,7 +68,7 @@ def lambda_handler(event, context):
                     "memoryUsage": '%s' % resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
                }
 
-    print "metadata", metadata
+    print("metadata", metadata)
     write_to_s3(job_bucket, mapper_fname, json.dumps(output), metadata)
     return pret
 
