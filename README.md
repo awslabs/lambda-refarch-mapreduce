@@ -13,7 +13,7 @@ By leveraging this framework, you can build a cost-effective pipeline to run ad 
 
 ## Architecture
 
-![Serverless MapReduce architecture](https://s3.amazonaws.com/smallya-test/bl-git.png "Serverless MapReduce architecture")
+![Serverless MapReduce architecture](https://d2908q01vomqb2.cloudfront.net/1b6453892473a467d07372d45eb05abc2031647a/2022/06/09/adhoc-picture1.png)
 
 ### IAM policies 
 
